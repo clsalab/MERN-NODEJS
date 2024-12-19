@@ -45,21 +45,24 @@ export const register = async (req,res) => {
 
 
 
-export const login = async (req,res) => {
-    const {email, password} = req.body;
+export const login = async (req, res) => {
+    const { email, password } = req.body;
     try {
+        // Buscar usuario por email
         const userFound = await User.findOne({ email });
-        if (userFound) {
-            return res.status(400).json({ errors: ["The email already exists"] }); 
+        if (!userFound) {
+            return res.status(400).json({ message: "Email no registrado" });
         }
 
+        // Comparar contraseñas
         const isMatch = await bcrypt.compare(password, userFound.password);
-        if (!isMatch) return res.status(400).json({ message: "Incorrect password" });
+        if (!isMatch) {
+            return res.status(400).json({ message: "Contraseña incorrecta" });
+        }
 
-        
-        const token = await createAccessToken({ id: userFound._id})
-        res.cookie('token', token)
-        //res.json({ message: "User created successfully" })
+        // Crear y devolver el token
+        const token = await createAccessToken({ id: userFound._id });
+        res.cookie("token", token);
 
         res.json({
             id: userFound._id,
@@ -68,13 +71,11 @@ export const login = async (req,res) => {
             isAdmin: userFound.isAdmin,
             createdAt: userFound.createdAt,
             updatedAt: userFound.updatedAt,
-        })
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message })
-        
+        console.error(error);
+        res.status(500).json({ message: "Error del servidor" });
     }
-    
-    
 };
 
 
